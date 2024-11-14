@@ -5,14 +5,13 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "build": "npm install && npm rebuild bcrypt --build-from-source",
+    "build": "npm install",
     "dev": "nodemon server.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "bcrypt": "^5.1.1",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
@@ -26,6 +25,6 @@
     "nodemon": "^2.0.22"
   },
   "engines": {
-    "node": ">=16.0.0"
+    "node": "18.x"
   }
 }
