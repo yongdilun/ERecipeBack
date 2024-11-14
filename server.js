@@ -16,10 +16,16 @@ dotenv.config();
 
 const app = express();
 
-// Updated CORS configuration for production
+// Updated CORS configuration for both development and production
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
-  credentials: true
+  origin: [
+    'http://localhost:3000',           // Development frontend
+    'https://erecipehub.netlify.app', // Production frontend
+    process.env.CLIENT_URL
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 app.use(express.json());
@@ -36,28 +42,50 @@ app.use('/api/recipes', recipesRouter);
 app.use('/api/myrecipes', myRecipesRouter);
 app.use('/api/edit-recipe', editRecipeRouter);
 
-// Connect to MongoDB
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB connected"))
-  .catch(err => console.log("MongoDB connection error:", err));
+// Connect to MongoDB with retry logic
+const connectDB = async () => {
+  try {
+    await mongoose.connect(process.env.MONGO_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 5000
+    });
+    console.log("MongoDB connected successfully");
+  } catch (err) {
+    console.error("MongoDB connection error:", err);
+    // Retry connection after 5 seconds
+    setTimeout(connectDB, 5000);
+  }
+};
 
-// Serve static files in production
-if (process.env.NODE_ENV === 'production') {
-  // Serve static files from the React build directory
-  app.use(express.static(path.join(__dirname, '../frontend/build')));
+connectDB();
 
-  // Handle React routing, return all requests to React app
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../frontend/build', 'index.html'));
+// API health check route
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'ok',
+    mode: process.env.NODE_ENV,
+    mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
   });
-} else {
-  // Development route
-  app.get('/', (req, res) => {
-    res.send('Hello, MERN!');
-  });
-}
+});
 
-const PORT = process.env.PORT || 5000;
+// Basic API route
+app.get('/', (req, res) => {
+  res.json({ message: 'API is running' });
+});
+
+// Handle 404 for API routes
+app.use('/api/*', (req, res) => {
+  res.status(404).json({ message: 'API endpoint not found' });
+});
+
+// Handle all other routes
+app.use('*', (req, res) => {
+  res.status(404).json({ message: 'Not found' });
+});
+
+const PORT = process.env.PORT || 10000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+  console.log(`CORS enabled for: ${process.env.CLIENT_URL}`);
 });
