@@ -48,12 +48,40 @@ app.use('/api/myrecipes', myRecipesRouter);
 app.use('/api/edit-recipe', editRecipeRouter);
 
 // Health check
-app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    mode: process.env.NODE_ENV,
-    mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
-  });
+app.get('/api/health', async (req, res) => {
+  try {
+    // Test database connection
+    const dbState = mongoose.connection.readyState;
+    const dbStatus = {
+      0: "disconnected",
+      1: "connected",
+      2: "connecting",
+      3: "disconnecting"
+    };
+
+    // Try to perform a simple database operation
+    const collections = await mongoose.connection.db.listCollections().toArray();
+    
+    res.json({
+      status: 'ok',
+      mode: process.env.NODE_ENV,
+      mongodb: {
+        state: dbStatus[dbState],
+        collections: collections.map(c => c.name)
+      },
+      env: {
+        nodeEnv: process.env.NODE_ENV,
+        port: process.env.PORT,
+        clientUrl: process.env.CLIENT_URL
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
 });
 
 // Handle API 404s
@@ -75,17 +103,38 @@ app.get('*', (req, res) => {
 // MongoDB Connection
 const connectDB = async () => {
   try {
+    console.log('Attempting to connect to MongoDB...');
     await mongoose.connect(process.env.MONGODB_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
       serverSelectionTimeoutMS: 5000,
       retryWrites: true,
-      w: 'majority'
+      w: 'majority',
+      dbName: 'erecipe'  // Explicitly set database name
     });
     console.log("MongoDB connected successfully");
+    
+    // Test the connection
+    const collections = await mongoose.connection.db.listCollections().toArray();
+    console.log('Available collections:', collections.map(c => c.name));
+    
   } catch (err) {
     console.error("MongoDB connection error:", err);
+    console.error("Connection string:", process.env.MONGODB_URI.replace(/\/\/[^:]+:[^@]+@/, '//<credentials>@'));
     setTimeout(connectDB, 5000);
   }
 };
+
+// Add connection error handlers
+mongoose.connection.on('error', err => {
+  console.error('MongoDB connection error:', err);
+});
+
+mongoose.connection.on('disconnected', () => {
+  console.log('MongoDB disconnected');
+  setTimeout(connectDB, 5000);
+});
+
 connectDB();
 
 const PORT = process.env.PORT || 10000;
