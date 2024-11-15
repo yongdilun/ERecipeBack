@@ -4,7 +4,7 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "start": "cross-env NODE_ENV=production node -r dotenv/config server.js dotenv_config_path=.env.production",
+    "start": "NODE_ENV=production node -r dotenv/config server.js dotenv_config_path=.env.production",
     "build": "npm install",
     "dev": "cross-env NODE_ENV=development nodemon -r dotenv/config server.js dotenv_config_path=.env.development"
   },
@@ -14,7 +14,6 @@
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
-    "cross-env": "^7.0.3",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
     "jsonwebtoken": "^9.0.2",
@@ -23,7 +22,8 @@
     "zxcvbn": "^4.4.2"
   },
   "devDependencies": {
-    "nodemon": "^2.0.22"
+    "nodemon": "^2.0.22",
+    "cross-env": "^7.0.3"
   },
   "engines": {
     "node": "18.x"
