@@ -109,8 +109,7 @@ const connectDB = async () => {
       useUnifiedTopology: true,
       serverSelectionTimeoutMS: 5000,
       retryWrites: true,
-      w: 'majority',
-      dbName: 'erecipe'  // Explicitly set database name
+      w: 'majority'
     });
     console.log("MongoDB connected successfully");
     
