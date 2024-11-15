@@ -47,6 +47,31 @@ app.use('/api/recipes', recipesRouter);
 app.use('/api/myrecipes', myRecipesRouter);
 app.use('/api/edit-recipe', editRecipeRouter);
 
+// Health check
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    mode: process.env.NODE_ENV,
+    mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
+  });
+});
+
+// Handle API 404s
+app.use('/api/*', (req, res) => {
+  res.status(404).json({ message: 'API endpoint not found' });
+});
+
+// Handle all other routes for client-side routing
+app.get('*', (req, res) => {
+  // For API requests, return 404
+  if (req.url.startsWith('/api/')) {
+    return res.status(404).json({ message: 'API endpoint not found' });
+  }
+  
+  // For all other requests, redirect to the frontend
+  res.redirect(process.env.CLIENT_URL);
+});
+
 // MongoDB Connection
 const connectDB = async () => {
   try {
@@ -62,27 +87,6 @@ const connectDB = async () => {
   }
 };
 connectDB();
-
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    mode: process.env.NODE_ENV,
-    mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
-  });
-});
-
-app.get('/', (req, res) => {
-  res.json({ message: 'API is running' });
-});
-
-app.use('/api/*', (req, res) => {
-  res.status(404).json({ message: 'API endpoint not found' });
-});
-
-app.use('*', (req, res) => {
-  res.status(404).json({ message: 'Not found' });
-});
 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, '0.0.0.0', () => {
