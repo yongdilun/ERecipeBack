@@ -48,6 +48,15 @@ router.get('/', async (req, res) => {
                 }
             },
             {
+                $lookup: {
+                    from: 'users',
+                    localField: 'user_id',
+                    foreignField: '_id',
+                    as: 'author'
+                }
+            },
+            { $unwind: '$author' },
+            {
                 $addFields: {
                     averageRating: {
                         $cond: {
@@ -56,6 +65,20 @@ router.get('/', async (req, res) => {
                             else: { $avg: "$ratings.rating" }
                         }
                     }
+                }
+            },
+            {
+                $project: {
+                    title: 1,
+                    description: 1,
+                    image_url: 1,
+                    prep_time: 1,
+                    cooking_time: 1,
+                    servings: 1,
+                    cuisine: 1,
+                    created_at: 1,
+                    averageRating: 1,
+                    'author.username': 1
                 }
             },
             { $sort: sort }

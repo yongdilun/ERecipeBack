@@ -12,57 +12,86 @@ const router = express.Router();
 router.get('/', async (req, res) => {
   try {
     const { search, sortBy, cuisine } = req.query;
-    let query = Recipe.find();
-
-    // Apply search if provided
+    
+    // Build the match query first
+    let matchQuery = {};
+    
     if (search) {
-      query = query.or([
+      matchQuery.$or = [
         { title: { $regex: search, $options: 'i' } },
         { description: { $regex: search, $options: 'i' } },
         { cuisine: { $regex: search, $options: 'i' } }
-      ]);
+      ];
     }
 
-    // Apply cuisine filter if provided
     if (cuisine && cuisine !== 'All') {
-      query = query.where('cuisine').equals(cuisine);
+      matchQuery.cuisine = cuisine;
     }
 
-    // Fetch recipes first
-    const recipes = await query.exec();
-
-    // Calculate average ratings for all recipes
-    const recipesWithRatings = await Promise.all(recipes.map(async (recipe) => {
-      const ratings = await Rate.find({ recipe_id: recipe._id });
-      const averageRating = ratings.length
-        ? (ratings.reduce((sum, rate) => sum + rate.rating, 0) / ratings.length)
-        : 0;
-      
-      return {
-        ...recipe._doc,
-        averageRating,
-      };
-    }));
-
-    // Apply sorting
-    let sortedRecipes = [...recipesWithRatings];
+    // Build sort object
+    let sortStage = { created_at: -1 }; // default sort
     if (sortBy) {
       switch (sortBy) {
         case 'latest':
-          sortedRecipes.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+          sortStage = { created_at: -1 };
           break;
         case 'oldest':
-          sortedRecipes.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+          sortStage = { created_at: 1 };
           break;
         case 'rating':
-          sortedRecipes.sort((a, b) => b.averageRating - a.averageRating);
+          sortStage = { averageRating: -1 };
           break;
-        default:
-          sortedRecipes.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
       }
     }
 
-    res.json(sortedRecipes);
+    const recipes = await Recipe.aggregate([
+      { $match: matchQuery },
+      {
+        $lookup: {
+          from: 'rates',
+          localField: '_id',
+          foreignField: 'recipe_id',
+          as: 'ratings'
+        }
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'user_id',
+          foreignField: '_id',
+          as: 'author'
+        }
+      },
+      { $unwind: '$author' },
+      {
+        $addFields: {
+          averageRating: {
+            $cond: {
+              if: { $eq: [{ $size: "$ratings" }, 0] },
+              then: 0,
+              else: { $avg: "$ratings.rating" }
+            }
+          }
+        }
+      },
+      {
+        $project: {
+          title: 1,
+          description: 1,
+          image_url: 1,
+          prep_time: 1,
+          cooking_time: 1,
+          servings: 1,
+          cuisine: 1,
+          created_at: 1,
+          averageRating: 1,
+          'author.username': 1
+        }
+      },
+      { $sort: sortStage }
+    ]);
+
+    res.json(recipes);
   } catch (error) {
     console.error('Error fetching recipes:', error);
     res.status(500).json({ message: 'Server error' });

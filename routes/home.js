@@ -5,13 +5,33 @@ const Rate = require('../models/Rate');
 
 router.get('/', async (req, res) => {
     try {
-        // Get all recipes sorted by date
-        const allLatestRecipes = await Recipe.find()
-            .sort({ created_at: -1 })
-            .populate('user_id', 'username');
+        const latestRecipes = await Recipe.aggregate([
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: 'user_id',
+                    foreignField: '_id',
+                    as: 'author'
+                }
+            },
+            { $unwind: '$author' },
+            {
+                $project: {
+                    title: 1,
+                    description: 1,
+                    image_url: 1,
+                    prep_time: 1,
+                    cooking_time: 1,
+                    servings: 1,
+                    created_at: 1,
+                    'author.username': 1
+                }
+            },
+            { $sort: { created_at: -1 } },
+            { $limit: 8 }
+        ]);
 
-        // Get all recipes with ratings
-        const allTopRatedRecipes = await Recipe.aggregate([
+        const topRatedRecipes = await Recipe.aggregate([
             {
                 $lookup: {
                     from: 'rates',
@@ -20,6 +40,15 @@ router.get('/', async (req, res) => {
                     as: 'ratings'
                 }
             },
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: 'user_id',
+                    foreignField: '_id',
+                    as: 'author'
+                }
+            },
+            { $unwind: '$author' },
             {
                 $addFields: {
                     averageRating: {
@@ -32,61 +61,29 @@ router.get('/', async (req, res) => {
                 }
             },
             {
-                $sort: { averageRating: -1 }
-            }
+                $project: {
+                    title: 1,
+                    description: 1,
+                    image_url: 1,
+                    prep_time: 1,
+                    cooking_time: 1,
+                    servings: 1,
+                    averageRating: 1,
+                    'author.username': 1
+                }
+            },
+            { $sort: { averageRating: -1 } },
+            { $limit: 8 }
         ]);
 
-        // Populate user information for top rated recipes
-        await Recipe.populate(allTopRatedRecipes, {
-            path: 'user_id',
-            select: 'username'
-        });
-
-        // Format the response data
-        const formattedLatestRecipes = allLatestRecipes.map(recipe => ({
-            _id: recipe._id,
-            title: recipe.title,
-            description: recipe.description,
-            imageUrl: recipe.image_url,
-            createdAt: recipe.created_at,
-            prep_time: recipe.prep_time,
-            cooking_time: recipe.cooking_time,
-            servings: recipe.servings,
-            cuisine: recipe.cuisine,
-            author: {
-                username: recipe.user_id?.username
-            }
-        }));
-
-        const formattedTopRatedRecipes = allTopRatedRecipes.map(recipe => ({
-            _id: recipe._id,
-            title: recipe.title,
-            description: recipe.description,
-            imageUrl: recipe.image_url,
-            prep_time: recipe.prep_time,
-            cooking_time: recipe.cooking_time,
-            servings: recipe.servings,
-            cuisine: recipe.cuisine,
-            averageRating: recipe.averageRating,
-            author: {
-                username: recipe.user_id?.username
-            }
-        }));
-
         res.json({
-            success: true,
             data: {
-                latestRecipes: formattedLatestRecipes,
-                topRatedRecipes: formattedTopRatedRecipes
+                latestRecipes,
+                topRatedRecipes
             }
         });
-
     } catch (error) {
-        console.error('Error fetching home page recipes:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Server error while fetching recipes'
-        });
+        res.status(500).json({ message: error.message });
     }
 });
 

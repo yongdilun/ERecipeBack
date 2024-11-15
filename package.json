@@ -4,9 +4,9 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "cross-env NODE_ENV=production node -r dotenv/config server.js dotenv_config_path=.env.production",
     "build": "npm install",
-    "dev": "nodemon server.js"
+    "dev": "cross-env NODE_ENV=development nodemon -r dotenv/config server.js dotenv_config_path=.env.development"
   },
   "keywords": [],
   "author": "",
@@ -22,7 +22,8 @@
     "zxcvbn": "^4.4.2"
   },
   "devDependencies": {
-    "nodemon": "^2.0.22"
+    "nodemon": "^2.0.22",
+    "cross-env": "^7.0.3"
   },
   "engines": {
     "node": "18.x"
