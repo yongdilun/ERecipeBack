@@ -23,9 +23,15 @@ async function deleteImage(imageUrl) {
 
   if (process.env.STORAGE_TYPE === 'cloud') {
     try {
-      // Extract public_id from Cloudinary URL
-      const publicId = imageUrl.split('/').slice(-1)[0].split('.')[0];
-      await cloudinary.uploader.destroy(publicId);
+      // Extract public_id from Cloudinary URL including the folder
+      const matches = imageUrl.match(/upload\/(?:v\d+\/)?(.+)\./);
+      if (matches && matches[1]) {
+        const publicId = matches[1];
+        console.log('Deleting Cloudinary image with public_id:', publicId);
+        await cloudinary.uploader.destroy(publicId);
+      } else {
+        console.error('Could not extract public_id from URL:', imageUrl);
+      }
     } catch (err) {
       console.error('Error deleting image from Cloudinary:', err);
     }
