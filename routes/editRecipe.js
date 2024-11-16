@@ -6,6 +6,39 @@ const RecipeStep = require('../models/RecipeStep');
 const mongoose = require('mongoose');
 const fs = require('fs').promises;
 const path = require('path');
+const cloudinary = require('cloudinary').v2;
+
+// Configure cloudinary if using cloud storage
+if (process.env.STORAGE_TYPE === 'cloud') {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+  });
+}
+
+// Helper function to delete image based on storage type
+async function deleteImage(imageUrl) {
+  if (!imageUrl) return;
+
+  if (process.env.STORAGE_TYPE === 'cloud') {
+    try {
+      // Extract public_id from Cloudinary URL
+      const publicId = imageUrl.split('/').slice(-1)[0].split('.')[0];
+      await cloudinary.uploader.destroy(publicId);
+    } catch (err) {
+      console.error('Error deleting image from Cloudinary:', err);
+    }
+  } else {
+    try {
+      // For local storage
+      const imagePath = path.join(__dirname, '..', 'public', imageUrl);
+      await fs.unlink(imagePath);
+    } catch (err) {
+      console.error('Error deleting local image:', err);
+    }
+  }
+}
 
 router.get('/:recipeId', async (req, res) => {
   try {
@@ -100,7 +133,6 @@ router.put('/:recipeId', async (req, res) => {
   }
 });
 
-// Update DELETE route with correct image path handling
 router.delete('/:recipeId', async (req, res) => {
   try {
     const recipeId = new mongoose.Types.ObjectId(req.params.recipeId);
@@ -116,23 +148,13 @@ router.delete('/:recipeId', async (req, res) => {
 
     // Delete main recipe image if it exists
     if (recipe.image_url) {
-      const imagePath = path.join(__dirname, '..', 'public', 'images', 'recipe', path.basename(recipe.image_url));
-      try {
-        await fs.unlink(imagePath);
-      } catch (err) {
-        console.error('Error deleting recipe image:', err);
-      }
+      await deleteImage(recipe.image_url);
     }
 
     // Delete all step images
     for (const step of steps) {
       if (step.image_url) {
-        const stepImagePath = path.join(__dirname, '..', 'public', 'images', 'recipestep', path.basename(step.image_url));
-        try {
-          await fs.unlink(stepImagePath);
-        } catch (err) {
-          console.error('Error deleting step image:', err);
-        }
+        await deleteImage(step.image_url);
       }
     }
 
@@ -151,6 +173,35 @@ router.delete('/:recipeId', async (req, res) => {
     console.error('Error deleting recipe:', error);
     res.status(500).json({ 
       message: 'Error deleting recipe',
+      error: error.message 
+    });
+  }
+});
+
+// Add a new route to handle image updates
+router.put('/:recipeId/update-image', async (req, res) => {
+  try {
+    const recipeId = new mongoose.Types.ObjectId(req.params.recipeId);
+    const { oldImageUrl, newImageUrl } = req.body;
+
+    if (oldImageUrl) {
+      await deleteImage(oldImageUrl);
+    }
+
+    const updatedRecipe = await Recipe.findByIdAndUpdate(
+      recipeId,
+      { image_url: newImageUrl },
+      { new: true }
+    );
+
+    res.json({ 
+      message: 'Recipe image updated successfully',
+      recipe: updatedRecipe
+    });
+  } catch (error) {
+    console.error('Error updating recipe image:', error);
+    res.status(500).json({ 
+      message: 'Error updating recipe image',
       error: error.message 
     });
   }
