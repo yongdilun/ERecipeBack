@@ -16,6 +16,9 @@ const homeRoutes = require('./routes/home');
 const myRecipesRouter = require('./routes/myRecipes');
 const editRecipeRouter = require('./routes/editRecipe');
 const favoriteRecipesRouter = require('./routes/favoriteRecipes');
+const adminDashboardRouter = require('./routes/adminDashboard');
+const userOverviewRouter = require('./routes/userOverview');
+const recipeOverviewRouter = require('./routes/recipeOverview');
 
 const app = express();
 
@@ -48,6 +51,9 @@ app.use('/api/recipes', recipesRouter);
 app.use('/api/myrecipes', myRecipesRouter);
 app.use('/api/edit-recipe', editRecipeRouter);
 app.use('/api/favorites', favoriteRecipesRouter);
+app.use('/api/admin', adminDashboardRouter);
+app.use('/api/admin', userOverviewRouter);
+app.use('/api/admin', recipeOverviewRouter);
 
 // Health check
 app.get('/api/health', async (req, res) => {
