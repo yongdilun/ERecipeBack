@@ -15,6 +15,7 @@ const recipesRouter = require('./routes/recipes');
 const homeRoutes = require('./routes/home');
 const myRecipesRouter = require('./routes/myRecipes');
 const editRecipeRouter = require('./routes/editRecipe');
+const favoriteRecipesRouter = require('./routes/favoriteRecipes');
 
 const app = express();
 
@@ -46,6 +47,7 @@ app.use('/api/uploads', uploadRouter);
 app.use('/api/recipes', recipesRouter);
 app.use('/api/myrecipes', myRecipesRouter);
 app.use('/api/edit-recipe', editRecipeRouter);
+app.use('/api/favorites', favoriteRecipesRouter);
 
 // Health check
 app.get('/api/health', async (req, res) => {

@@ -6,16 +6,18 @@ const RecipeIngredient = require('../models/RecipeIngredient');
 const Rate = require('../models/Rate'); // Import the Rate model
 const Comment = require('../models/Comment'); // Import the Comment model
 const User = require('../models/User'); // Import the User model
+const FavoriteRecipe = require('../models/FavoriteRecipe');
 const router = express.Router();
 
-// GET /api/recipes - Fetch all recipes with sorting, searching, and filtering
+// GET /api/recipes - Fetch all recipes with sorting, searching, filtering, and favorites
 router.get('/', async (req, res) => {
   try {
-    const { search, sortBy, cuisine } = req.query;
+    const { search, sortBy, cuisine, userId, favorites } = req.query;
     
     // Build the match query first
     let matchQuery = {};
     
+    // Add search filter
     if (search) {
       matchQuery.$or = [
         { title: { $regex: search, $options: 'i' } },
@@ -24,8 +26,16 @@ router.get('/', async (req, res) => {
       ];
     }
 
+    // Add cuisine filter
     if (cuisine && cuisine !== 'All') {
       matchQuery.cuisine = cuisine;
+    }
+
+    // If favorites filter is true and userId is provided
+    if (favorites === 'true' && userId) {
+      const favoriteRecipes = await FavoriteRecipe.find({ user_id: userId });
+      const favoriteRecipeIds = favoriteRecipes.map(fav => fav.recipe_id);
+      matchQuery._id = { $in: favoriteRecipeIds };
     }
 
     // Build sort object
