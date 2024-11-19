@@ -11,6 +11,8 @@ A Node.js/Express backend server for the ERecipeHub recipe sharing platform.
 - Favorite recipe functionality
 - Search, sort, and filter recipes
 - Environment-specific configurations
+- Admin dashboard and management
+- Content reporting system
 
 ## Tech Stack
 
@@ -60,6 +62,20 @@ A Node.js/Express backend server for the ERecipeHub recipe sharing platform.
 
 ### Home Route (`/api/home`)
 - `GET /` - Get latest and top-rated recipes
+
+### Admin Routes (`/api/admin`)
+- `GET /overview` - Get admin dashboard statistics
+- `GET /user-overview` - Get user management data
+- `GET /recipe-overview` - Get recipe management data
+- `DELETE /recipes/:recipeId` - Delete recipe (admin)
+- `DELETE /comments/:commentId` - Delete comment (admin)
+
+### Report Routes (`/api/reports` & `/api/admin/reports`)
+- `POST /create` - Create new report
+- `GET /content/:contentId` - Get reports for specific content
+- `GET /reports` - Get all reports (admin)
+- `GET /reports/:reportId` - Get single report (admin)
+- `PUT /reports/:reportId/status` - Update report status (admin)
 
 ## Environment Variables
 
@@ -122,6 +138,8 @@ CLOUDINARY_API_SECRET=your_api_secret
 - Protect your Cloudinary credentials
 - Ensure CORS settings match your frontend URLs
 - Use appropriate environment variables based on NODE_ENV
+- Admin routes are protected and require admin role
+- Report management is restricted to admin users
 
 ## How to Run
 

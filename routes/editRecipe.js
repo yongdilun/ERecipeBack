@@ -3,6 +3,7 @@ const router = express.Router();
 const Recipe = require('../models/Recipe');
 const RecipeIngredient = require('../models/RecipeIngredient');
 const RecipeStep = require('../models/RecipeStep');
+const Report = require('../models/Report');
 const mongoose = require('mongoose');
 const fs = require('fs').promises;
 const path = require('path');
@@ -164,15 +165,23 @@ router.delete('/:recipeId', async (req, res) => {
       }
     }
 
-    // Delete the recipe and its related data
+    // Delete the recipe and all associated data including reports
     await Promise.all([
       Recipe.findByIdAndDelete(recipeId),
       RecipeIngredient.deleteMany({ recipe_id: recipeId }),
-      RecipeStep.deleteMany({ recipe_id: recipeId })
+      RecipeStep.deleteMany({ recipe_id: recipeId }),
+      Report.deleteMany({ 
+        reportedContentId: recipeId,
+        reportedContentType: 'recipe'
+      }),
+      Report.deleteMany({
+        reportedContentType: 'comment',
+        recipeId: recipeId
+      })
     ]);
 
     res.json({ 
-      message: 'Recipe and all associated data deleted successfully',
+      message: 'Recipe, associated data, and reports deleted successfully',
       recipeId: recipeId
     });
   } catch (error) {
