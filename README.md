@@ -141,6 +141,64 @@ CLOUDINARY_API_SECRET=your_api_secret
 - Admin routes are protected and require admin role
 - Report management is restricted to admin users
 
+## How to Run Locally
+
+1. Prerequisites:
+   - Node.js (v18 or higher)
+   - MongoDB installed locally
+   - Git
+
+2. Clone the Repository:
+   ```bash
+   git clone https://github.com/yourusername/ERecipeHub.git
+   cd ERecipeHub/backend
+   ```
+
+3. Install Dependencies:
+   ```bash
+   npm install
+   ```
+
+4. Set Up Environment Variables:
+   - Create `.env.development` file in the root directory
+   ```env
+   NODE_ENV=development
+   PORT=10000
+   MONGODB_URI=mongodb://localhost:27017/test
+   JWT_SECRET=your_jwt_secret
+   CLIENT_URL=http://localhost:3000
+   STORAGE_TYPE=local
+   IMAGE_BASE_URL=http://localhost:10000
+   ```
+
+5. Start MongoDB:
+   ```bash
+   # Windows
+   "C:\Program Files\MongoDB\Server\{version}\bin\mongod.exe"
+   
+   # macOS/Linux
+   mongod
+   ```
+
+6. Create Required Directories:
+   ```bash
+   mkdir -p public/images
+   ```
+
+7. Start the Development Server:
+   ```bash
+   npm run dev
+   ```
+
+8. Verify Installation:
+   - Open http://localhost:10000/api/health
+   - Should see a JSON response with server status
+
+9. Common Issues:
+   - Port 10000 already in use: Change PORT in .env.development
+   - MongoDB connection failed: Ensure MongoDB is running
+   - Image upload fails: Check public/images directory permissions
+
 ## How to Run
 
 1. Install Node.js and MongoDB

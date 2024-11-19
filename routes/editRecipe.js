@@ -143,6 +143,7 @@ router.put('/:recipeId', async (req, res) => {
 router.delete('/:recipeId', async (req, res) => {
   try {
     const recipeId = new mongoose.Types.ObjectId(req.params.recipeId);
+    const { source } = req.query;
 
     // First get the recipe to access image URLs
     const recipe = await Recipe.findById(recipeId);
@@ -182,7 +183,8 @@ router.delete('/:recipeId', async (req, res) => {
 
     res.json({ 
       message: 'Recipe, associated data, and reports deleted successfully',
-      recipeId: recipeId
+      recipeId: recipeId,
+      source: source
     });
   } catch (error) {
     console.error('Error deleting recipe:', error);
