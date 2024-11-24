@@ -59,6 +59,51 @@ app.use('/api/admin', recipeOverviewRouter);
 app.use('/api/reports', reportRouter);
 app.use('/api/admin', manageReportsRouter);
 
+// Add this test route after your other routes and before the 404 handlers
+app.get('/api/test-db', async (req, res) => {
+  try {
+    // Test Collection
+    const TestModel = mongoose.model('Test', new mongoose.Schema({
+      name: String,
+      date: { type: Date, default: Date.now }
+    }));
+
+    // Create
+    const testDoc = await TestModel.create({ name: 'test document' });
+    console.log('Created:', testDoc);
+
+    // Read
+    const readDoc = await TestModel.findById(testDoc._id);
+    console.log('Read:', readDoc);
+
+    // Update
+    const updatedDoc = await TestModel.findByIdAndUpdate(
+      testDoc._id,
+      { name: 'updated test document' },
+      { new: true }
+    );
+    console.log('Updated:', updatedDoc);
+
+    // Delete
+    const deletedDoc = await TestModel.findByIdAndDelete(testDoc._id);
+    console.log('Deleted:', deletedDoc);
+
+    res.json({
+      success: true,
+      message: 'All CRUD operations successful',
+      dbState: mongoose.connection.readyState,
+      collections: await mongoose.connection.db.listCollections().toArray()
+    });
+  } catch (error) {
+    console.error('Database test error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      dbState: mongoose.connection.readyState
+    });
+  }
+});
+
 // Health check
 app.get('/api/health', async (req, res) => {
   try {
@@ -116,13 +161,14 @@ app.get('*', (req, res) => {
 const connectDB = async () => {
   try {
     console.log('Attempting to connect to MongoDB...');
+    console.log('MongoDB URI:', process.env.MONGODB_URI.replace(/\/\/[^:]+:[^@]+@/, '//<credentials>@'));
+    
     await mongoose.connect(process.env.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
       serverSelectionTimeoutMS: 5000,
       retryWrites: true,
       w: 'majority'
     });
+    
     console.log("MongoDB connected successfully");
     
     // Test the connection
@@ -131,19 +177,26 @@ const connectDB = async () => {
     
   } catch (err) {
     console.error("MongoDB connection error:", err);
-    console.error("Connection string:", process.env.MONGODB_URI.replace(/\/\/[^:]+:[^@]+@/, '//<credentials>@'));
+    console.error("Full error object:", JSON.stringify(err, null, 2));
     setTimeout(connectDB, 5000);
   }
 };
 
-// Add connection error handlers
+// Enhanced error handlers
 mongoose.connection.on('error', err => {
   console.error('MongoDB connection error:', err);
+  console.error('Full error details:', JSON.stringify(err, null, 2));
 });
 
 mongoose.connection.on('disconnected', () => {
   console.log('MongoDB disconnected');
+  console.log('Current connection state:', mongoose.connection.readyState);
   setTimeout(connectDB, 5000);
+});
+
+mongoose.connection.on('connected', () => {
+  console.log('MongoDB connected');
+  console.log('Current connection state:', mongoose.connection.readyState);
 });
 
 connectDB();

@@ -16,16 +16,21 @@ A Node.js/Express backend server for the ERecipeHub recipe sharing platform.
 
 ## Tech Stack
 
-- **Node.js** - Runtime environment
-- **Express** - Web framework
-- **MongoDB** - Database
-- **Mongoose** - ODM (Object Data Modeling)
-- **JWT** - Authentication
-- **Bcrypt** - Password hashing
-- **Multer** - File upload handling
-- **Cloudinary** - Cloud image storage
-- **Jimp** - Image processing
-- **CORS** - Cross-Origin Resource Sharing
+- **Node.js** - Runtime environment for executing JavaScript server-side.
+- **Express** - Lightweight and flexible web framework for building APIs and web applications.
+- **MongoDB** - NoSQL database for storing application data.
+- **Mongoose** - Object Data Modeling (ODM) library for MongoDB, providing schema-based data modeling.
+- **JWT (JSON Web Tokens)** - For secure authentication and authorization.
+- **Bcrypt.js** - Password hashing for securing user credentials.
+- **Multer** - Middleware for handling file uploads in Node.js.
+- **Cloudinary** - Cloud-based storage for managing and delivering images and videos.
+- **Jimp** - JavaScript library for basic image processing tasks.
+- **CORS** - Middleware for enabling Cross-Origin Resource Sharing.
+- **Dotenv** - For managing environment variables in a `.env` file.
+
+### Development Tools
+- **Nodemon** - Automatically restarts the server when file changes are detected, streamlining development.
+- **Cross-Env** - Enables cross-platform compatibility for setting environment variables in scripts.
 
 ## API Routes
 
@@ -150,8 +155,7 @@ CLOUDINARY_API_SECRET=your_api_secret
 
 2. Clone the Repository:
    ```bash
-   git clone https://github.com/yourusername/ERecipeHub.git
-   cd ERecipeHub/backend
+   git clone https://github.com/yongdilun/ERecipeBack.git
    ```
 
 3. Install Dependencies:
@@ -180,21 +184,16 @@ CLOUDINARY_API_SECRET=your_api_secret
    mongod
    ```
 
-6. Create Required Directories:
-   ```bash
-   mkdir -p public/images
-   ```
-
-7. Start the Development Server:
+6. Start the Development Server:
    ```bash
    npm run dev
    ```
 
-8. Verify Installation:
+7. Verify Installation:
    - Open http://localhost:10000/api/health
    - Should see a JSON response with server status
 
-9. Common Issues:
+8. Common Issues:
    - Port 10000 already in use: Change PORT in .env.development
    - MongoDB connection failed: Ensure MongoDB is running
    - Image upload fails: Check public/images directory permissions
